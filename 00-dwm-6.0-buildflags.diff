@@ -1,0 +1,27 @@
+--- ../config.mk	2011-12-19 14:38:30.000000000 +0000
++++ config.mk	2014-05-31 22:12:35.515345908 +0100
+@@ -4,19 +4,19 @@
+ # Customize below to fit your system
+ 
+ # paths
+-PREFIX = /usr/local
++PREFIX = /usr
+ MANPREFIX = ${PREFIX}/share/man
+ 
+-X11INC = /usr/X11R6/include
+-X11LIB = /usr/X11R6/lib
++X11INC = /usr/include/X11
++X11LIB = /usr/lib/X11
+ 
+ # Xinerama
+ XINERAMALIBS = -L${X11LIB} -lXinerama
+ XINERAMAFLAGS = -DXINERAMA
+ 
+ # includes and libs
+-INCS = -I. -I/usr/include -I${X11INC}
+-LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 ${XINERAMALIBS}
++INCS = -I. -I/usr/include -I${X11INC} 
++LIBS = -L/usr/lib -lc -L${X11LIB} -lX11 ${XINERAMALIBS}
+ 
+ # flags
+ CPPFLAGS = -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}

@@ -1,0 +1,91 @@
+--- ../dwm.c	2015-01-02 15:45:31.273875951 +0000
++++ dwm.c	2015-01-02 15:44:09.234193425 +0000
+@@ -205,8 +205,8 @@ static void die(const char *errstr, ...)
+ static Monitor *dirtomon(int dir);
+ static void drawbar(Monitor *m);
+ static void drawbars(void);
++static void drawborder(unsigned long col[ColLast]);
+ static void drawcoloredtext(char *text);
+-static void drawsquare(Bool filled, Bool empty, unsigned long col[ColLast]);
+ static void drawtext(const char *text, unsigned long col[ColLast], Bool pad);
+ static void enternotify(XEvent *e);
+ static void expose(XEvent *e);
+@@ -837,7 +837,7 @@ void
+ drawbar(Monitor *m) {
+ 	int x;
+ 	unsigned int i, occ = 0, urg = 0;
+-	unsigned long *col;
++	unsigned long *col, *ltcol;
+ 	Client *c;
+ 
+ 	resizebarwin(m);
+@@ -847,12 +847,16 @@ drawbar(Monitor *m) {
+ 			urg |= c->tags;
+ 	}
+ 	dc.x = 0;
++	dc.w = m->ww;
++	drawborder(dc.colors[0]);
+ 	for(i = 0; i < LENGTH(tags); i++) {
+ 		dc.w = TEXTW(tags[i]);
+ 		col = dc.colors[(m->tagset[m->seltags] & 1 << i ? 1:(urg & 1 << i ? 2:0))];
+ 		drawtext(tags[i], col, True);
+-		drawsquare(m == selmon && selmon->sel && selmon->sel->tags & 1 << i, occ & 1 << i, col);
+- dc.x += dc.w;
++	    ltcol = occ & 1 << i || m->tagset[m->seltags] & 1 << i ? dc.colors[0] : dc.colors[2];
++		drawtext(tags[i], ltcol, urg & 1 << i);
++		drawborder(col);
++		dc.x += dc.w;
+ 	}
+ 	dc.w = blw = TEXTW(m->ltsymbol);
+ 	drawtext(m->ltsymbol, dc.colors[0], True);
+@@ -877,7 +881,6 @@ drawbar(Monitor *m) {
+ 		if(m->sel) {
+ 			col = m == selmon ? dc.colors[1] : dc.colors[0];
+ 			drawtext(m->sel->name, col, True);
+-			drawsquare(m->sel->isfixed, m->sel->isfloating, col);
+ 		}
+ 		else
+ 			drawtext(NULL, dc.colors[0], False);
+@@ -895,6 +898,15 @@ drawbars(void) {
+ 	updatesystray();
+ }
+ 
++void drawborder(unsigned long col[ColLast]){
++	XGCValues gcv;
++	XRectangle r = { dc.x - 5, dc.y + 16, dc.w, 2 }; // +16 for underline, 0 for overhead line
++
++	gcv.foreground = col[ColBorder];
++	XChangeGC(dpy, dc.gc, GCForeground, &gcv);
++	XFillRectangles(dpy, dc.drawable, dc.gc, &r, 1);
++}
++
+ void
+ drawcoloredtext(char *text) {
+ 	char *buf = text, *ptr = buf, c = 1;
+@@ -920,17 +932,6 @@ drawcoloredtext(char *text) {
+ }
+ 
+ void
+-drawsquare(Bool filled, Bool empty, unsigned long col[ColLast]) {
+-	int x;
+-	XSetForeground(dpy, dc.gc, col[ColFG]);
+-	x = (dc.font.ascent + dc.font.descent + 2) / 4;
+-	if(filled)
+-		XFillRectangle(dpy, dc.drawable, dc.gc, dc.x+1, dc.y+1, x+1, x+1);
+-	else if(empty)
+-		XDrawRectangle(dpy, dc.drawable, dc.gc, dc.x+1, dc.y+1, x, x);
+-}
+-
+-void
+ drawtext(const char *text, unsigned long col[ColLast], Bool pad) {
+ 	char buf[256];
+ 	int i, x, y, h, len, olen;
+@@ -942,7 +943,7 @@ drawtext(const char *text, unsigned long
+ 	olen = strlen(text);
+ 	h = pad ? (dc.font.ascent + dc.font.descent) : 0;
+ 	y = dc.y + ((dc.h + dc.font.ascent - dc.font.descent) / 2);
+-	x = dc.x + (h / 2);
++	x = dc.x + (h / 2) + 5;
+ 	/* shorten text if necessary */
+ 	for(len = MIN(olen, sizeof buf); len && textnw(text, len) > dc.w - h; len--);
+ 	if(!len)
